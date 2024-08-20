@@ -8,6 +8,8 @@ import 'CropManager.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+// Supabase import
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -23,6 +25,11 @@ void main() async {
 
   const InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
+  );
+
+  await Supabase.initialize(
+    url: 'https://kaidorbevjarpoujjgqq.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthaWRvcmJldmphcnBvdWpqZ3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjEzODE0ODAsImV4cCI6MjAzNjk1NzQ4MH0.K_2JnJLDcZABX5CBtWYeLME5Gte9K4ldOoUkUhJshC0',
   );
 
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
@@ -76,13 +83,36 @@ class MyWelcomePage extends StatefulWidget {
 }
 
 class _MyWelcomePageState extends State<MyWelcomePage> {
+  double? crop_name;
+  //final _cropStream = Supabase.instance.client.from('crop_list').stream(primaryKey: ['id']);
+
+
   @override
   void initState() {
     super.initState();
+    fetchCrop();
     Future.delayed(const Duration(seconds: 5)).then((value) => {
       FlutterNativeSplash.remove()
     });
   }
+
+  Future<void> fetchCrop() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('hardwareTest')
+          .select('temperature')
+          .order('id', ascending: false)
+          .limit(1)
+          .single();
+
+      setState(() {
+        crop_name = response['temperature'];
+      });
+    } catch (error) {
+      print('Error fetching crop: $error');
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -108,6 +138,16 @@ class _MyWelcomePageState extends State<MyWelcomePage> {
               ),
             ),
             const SizedBox(height: 25,),
+            if(crop_name != null)
+              Text(
+                'Crop name: $crop_name',
+                style: const TextStyle(
+                  fontFamily: 'Lato',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.white,
+                ),
+              ),
             const Align(
               alignment: Alignment.center,
               child: SizedBox(
